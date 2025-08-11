@@ -505,31 +505,31 @@ def nouveau_mouvement():
 #     produits = Produit.query.all()
 #     return render_template('mouvement/modifier_mouvement.html', mouvement=mouvement, produit=produit, produits=produits)
 
-@app.route('/mouvement/<int:id_mouvement>/supprimer', methods=['POST'])
-@login_required
-def supprimer_mouvement(id_mouvement):
-    mouvement = Mouvement.query.get_or_404(id_mouvement)
-    produit = Produit.query.get(mouvement.id_produit)
-    try:
-        # Mettre à jour le stock du produit
-        if mouvement.type_mouvement == 'ENTREE':
-            produit.stock_actuel -= mouvement.quantite
-        else:
-            produit.stock_actuel += mouvement.quantite
-        if not produit.has_alert:
-            # Si le stock est au-dessus du seuil, modifier l'alerte à traiter
-            alerte = Alerte.query.filter_by(id_produit=produit.id_produit, statut='NOUVELLE').first()
-            if alerte:
-                db.session.delete(alerte)
-                db.session.commit()
-        db.session.delete(mouvement)
-        db.session.commit()
-        flash('Mouvement supprimé avec succès!', 'success')
-        return redirect(url_for('mouvements'))
-    except Exception as e:
-        db.session.rollback()
-        flash('Erreur lors de la suppression du mouvement', 'error')
-        return redirect(url_for('mouvements'))
+# @app.route('/mouvement/<int:id_mouvement>/supprimer', methods=['POST'])
+# @login_required
+# def supprimer_mouvement(id_mouvement):
+#     mouvement = Mouvement.query.get_or_404(id_mouvement)
+#     produit = Produit.query.get(mouvement.id_produit)
+#     try:
+#         # Mettre à jour le stock du produit
+#         if mouvement.type_mouvement == 'ENTREE':
+#             produit.stock_actuel -= mouvement.quantite
+#         else:
+#             produit.stock_actuel += mouvement.quantite
+#         if not produit.has_alert:
+#             # Si le stock est au-dessus du seuil, modifier l'alerte à traiter
+#             alerte = Alerte.query.filter_by(id_produit=produit.id_produit, statut='NOUVELLE').first()
+#             if alerte:
+#                 db.session.delete(alerte)
+#                 db.session.commit()
+#         db.session.delete(mouvement)
+#         db.session.commit()
+#         flash('Mouvement supprimé avec succès!', 'success')
+#         return redirect(url_for('mouvements'))
+#     except Exception as e:
+#         db.session.rollback()
+#         flash('Erreur lors de la suppression du mouvement', 'error')
+#         return redirect(url_for('mouvements'))
 
 @app.route('/alertes')
 @login_required
