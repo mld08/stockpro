@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Nouveau Mouvement - StockPro{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-exchange-alt text-primary-600 mr-3"></i>
+                    Nouveau Mouvement
+                </h1>
+                <p class="text-gray-600">Enregistrez un nouveau mouvement de stock</p>
+            </div>
+            <a href="{{ url_for('mouvements') }}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover-lift transition-all duration-300">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="glass-effect rounded-2xl shadow-xl overflow-hidden hover-lift">
+        <div class="gradient-bg p-6">
+            <h2 class="text-xl font-semibold text-white flex items-center">
+                <i class="fas fa-edit mr-2"></i>
+                Informations du mouvement
+            </h2>
+        </div>
+
+        <form method="POST" action="{{ url_for('nouveau_mouvement') }}" class="p-6 space-y-6" x-data="movementForm()">
+            <!-- Sélection du produit et type -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Produit -->
+                <div class="animate-slide-in">
+                    <label for="id_produit" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-box mr-1 text-primary-600"></i>
+                        Produit *
+                    </label>
+                    <select id="id_produit" 
+                            name="id_produit" 
+                            required
+                            x-model="form.id_produit"
+                            @change="updateProductInfo()"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                        <option value="">Sélectionnez un produit</option>
+                        {% for produit in produits %}
+                        <option value="{{ produit.id_produit }}" 
+                                data-stock="{{ produit.stock_actuel }}" 
+                                data-unite="{{ produit.unite }}"
+                                data-nom="{{ produit.nom }}">
+                            {{ produit.nom }} (Stock: {{ produit.stock_actuel }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Type de mouvement -->
+                <div class="animate-slide-in">
+                    <label for="type_mouvement" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-arrows-alt-v mr-1 text-primary-600"></i>
+                        Type de mouvement *
+                    </label>
+                    <select id="type_mouvement" 
+                            name="type_mouvement" 
+                            required
+                            x-model="form.type_mouvement"
+                            @change="updateMovementType()"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                        <option value="">Sélectionnez le type</option>
+                        <option value="ENTREE">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            Entrée (Ajout au stock)
+                        </option>
+                        <option value="SORTIE">
+                            <i class="fas fa-arrow-down mr-1"></i>
+                            Sortie (Retrait du stock)
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Informations sur le produit sélectionné -->
+            <div x-show="selectedProduct.nom" 
+                 x-transition
+                 class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-info-circle mr-1 text-blue-600"></i>
+                    Informations du produit sélectionné
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <span class="font-medium text-gray-600">Produit:</span>
+                        <span x-text="selectedProduct.nom" class="ml-1 font-semibold text-blue-700"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Stock actuel:</span>
+                        <span x-text="selectedProduct.stock + ' ' + selectedProduct.unite" class="ml-1 font-semibold text-green-700"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Unité:</span>
+                        <span x-text="selectedProduct.unite" class="ml-1 font-semibold text-gray-700"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantité et Motif -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Quantité -->
+                <div class="animate-slide-in">
+                    <label for="quantite" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-hashtag mr-1 text-primary-600"></i>
+                        Quantité *
+                    </label>
+                    <input type="number" 
+                           id="quantite" 
+                           name="quantite" 
+                           min="1"
+                           required
+                           x-model="form.quantite"
+                           @input="calculateNewStock()"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           :placeholder="'Quantité en ' + selectedProduct.unite">
+                    <p class="mt-1 text-sm text-gray-500">Quantité à ajouter ou retirer</p>
+                </div>
+
+                <!-- Date du mouvement -->
+                <div class="animate-slide-in">
+                    <label for="date_mouvement" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-calendar-alt mr-1 text-primary-600"></i>
+                        Date du mouvement *
+                    </label>
+                    <input type="datetime-local" 
+                           id="date_mouvement" 
+                           name="date_mouvement"
+                           required
+                           x-model="form.date_mouvement"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                    <p class="mt-1 text-sm text-gray-500">Date et heure du mouvement</p>
+                </div>
+
+                <!-- Motif -->
+                <div class="animate-slide-in">
+                    <label for="motif" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-comment mr-1 text-primary-600"></i>
+                        Motif
+                    </label>
+                    <input type="text" 
+                           id="motif" 
+                           name="motif"
+                           x-model="form.motif"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           placeholder="Raison du mouvement">
+                    <p class="mt-1 text-sm text-gray-500">Raison du mouvement</p>
+                </div>
+            </div>
+
+            <!-- Référence document -->
+            <div class="animate-slide-in">
+                <label for="reference_doc" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-file-alt mr-1 text-primary-600"></i>
+                    Référence document
+                </label>
+                <input type="text" 
+                       id="reference_doc" 
+                       name="reference_doc"
+                       x-model="form.reference_doc"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                       placeholder="Numéro de facture, bon de livraison, etc.">
+                <p class="mt-1 text-sm text-gray-500">Référence de la facture ou du bon</p>
+            </div>
+
+            <!-- Aperçu de l'impact -->
+            <div x-show="form.quantite && selectedProduct.stock !== null && form.type_mouvement" 
+                 x-transition
+                 class="rounded-lg p-4 border"
+                 :class="stockAlert ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' : 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-700">
+                        <i class="fas fa-calculator mr-2" 
+                           :class="stockAlert ? 'text-red-600' : 'text-green-600'"></i>
+                        Impact sur le stock
+                    </span>
+                    <div x-show="stockAlert" class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Attention!
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="font-medium text-gray-600">Stock actuel:</span>
+                        <span class="ml-1 font-bold" x-text="selectedProduct.stock + ' ' + selectedProduct.unite"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Stock après mouvement:</span>
+                        <span class="ml-1 font-bold" 
+                              :class="stockAlert ? 'text-red-700' : 'text-green-700'"
+                              x-text="newStock + ' ' + selectedProduct.unite"></span>
+                    </div>
+                </div>
+                <div x-show="stockAlert" class="mt-2 text-sm text-red-700">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    Attention: Cette sortie rendrait le stock négatif!
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{{ url_for('mouvements') }}" 
+                   class="px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover-lift transition-all duration-300">
+                    <i class="fas fa-times mr-2"></i>
+                    Annuler
+                </a>
+                <button type="submit" 
+                        :disabled="stockAlert"
+                        class="px-6 py-3 gradient-bg text-white rounded-lg text-sm font-medium hover:opacity-90 hover-lift transition-all duration-300 shadow-lg"
+                        :class="stockAlert ? 'opacity-50 cursor-not-allowed' : ''">
+                    <i class="fas fa-save mr-2"></i>
+                    Enregistrer le mouvement
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function movementForm() {
+    return {
+        form: {
+            id_produit: '',
+            type_mouvement: '',
+            quantite: '',
+            motif: '',
+            reference_doc: ''
+        },
+        init() {
+            // Initialiser la date avec la date et heure actuelles
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            this.form.date_mouvement = `${year}-${month}-${day}T${hours}:${minutes}`;
+        },
+        selectedProduct: {
+            nom: '',
+            stock: null,
+            unite: ''
+        },
+        newStock: 0,
+        stockAlert: false,
+        
+        updateProductInfo() {
+            const select = document.getElementById('id_produit');
+            const option = select.options[select.selectedIndex];
+            
+            if (option && option.value) {
+                this.selectedProduct = {
+                    nom: option.getAttribute('data-nom'),
+                    stock: parseInt(option.getAttribute('data-stock')),
+                    unite: option.getAttribute('data-unite')
+                };
+                this.calculateNewStock();
+            } else {
+                this.selectedProduct = { nom: '', stock: null, unite: '' };
+                this.newStock = 0;
+                this.stockAlert = false;
+            }
+        },
+        
+        updateMovementType() {
+            this.calculateNewStock();
+        },
+        
+        calculateNewStock() {
+            if (this.selectedProduct.stock !== null && this.form.quantite && this.form.type_mouvement) {
+                const quantity = parseInt(this.form.quantite) || 0;
+                
+                if (this.form.type_mouvement === 'ENTREE') {
+                    this.newStock = this.selectedProduct.stock + quantity;
+                    this.stockAlert = false;
+                } else if (this.form.type_mouvement === 'SORTIE') {
+                    this.newStock = this.selectedProduct.stock - quantity;
+                    this.stockAlert = this.newStock < 0;
+                }
+            } else {
+                this.newStock = this.selectedProduct.stock || 0;
+                this.stockAlert = false;
+            }
+        }
+    }
+}
+
+// Animation au scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const elements = document.querySelectorAll('.animate-slide-in');
+    elements.forEach((el, index) => {
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(-20px)';
+            el.style.transition = 'all 0.6s ease-out';
+            
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateX(0)';
+            }, 100);
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

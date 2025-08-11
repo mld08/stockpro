@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Produits - Gestion Comptabilité Matière{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Page Header -->
+            <div
+                class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        <i class="fas fa-boxes mr-3 text-primary-600"></i>
+                        Gestion des Produits
+                    </h1>
+                    <p class="text-gray-600">Gérez votre inventaire et suivez vos stocks en temps réel</p>
+                </div>
+                <a href="{{ url_for('nouveau_produit') }}"
+                    class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white rounded-xl hover:from-primary-700 hover:to-purple-700 font-medium transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>
+                    Nouveau Produit
+                </a>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="glass-effect rounded-2xl p-6 mb-8" x-data="{ 
+                activeFilter: 'all',
+                searchTerm: '{{ search }}',
+                showAdvanced: false 
+            }">
+                <div class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-6">
+                    <!-- Search Bar -->
+                    <div class="flex-1">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <form method="GET" class="flex">
+                                <input type="text" name="search" x-model="searchTerm"
+                                    class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-l-xl focus:ring-primary-500 focus:border-primary-500 bg-white/80 backdrop-blur-sm"
+                                    placeholder="Rechercher un produit (nom, code...)" value="{{ search }}">
+                                <button type="submit"
+                                    class="px-6 py-3 bg-primary-600 text-white rounded-r-xl hover:bg-primary-700 transition-colors duration-300">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                
+            </div>
+
+            <!-- Products list -->
+            <div x-data="{ view: 'grid' }">
+                <!-- Boutons de changement de vue -->
+                <div class="mb-6 flex justify-between items-center">
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <span>{{ produits.total }} produit{{ 's' if produits.total > 1 else '' }} trouvé{{ 's' if
+                            produits.total > 1 else '' }}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">Affichage:</span>
+                        <button @click="view = 'grid'"
+                            :class="view === 'grid' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'"
+                            class="p-2 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button @click="view = 'table'"
+                            :class="view === 'table' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'"
+                            class="p-2 rounded-lg transition-colors duration-200">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vue en grille -->
+                <div x-show="view === 'grid'"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-8">
+                    {% for produit in produits.items %}
+                    <!-- Carte produit -->
+                    <div class="glass-effect rounded-2xl overflow-hidden hover-lift transition-all duration-300 group">
+                        <div class="relative">
+                            <div
+                                class="h-2 {{ 'bg-red-500' if produit.stock_actuel <= produit.seuil_min else 'bg-green-500' if produit.stock_actuel > produit.seuil_min * 2 else 'bg-orange-500' }}">
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <!-- Product Icon -->
+                            <div
+                                class="w-16 h-16 bg-gradient-to-r from-primary-500 to-purple-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-box text-white text-2xl"></i>
+                            </div>
+
+                            <!-- Product Info -->
+                            <div class="mb-4">
+                                <h3
+                                    class="text-lg font-semibold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors duration-200">
+                                    {{ produit.nom }}
+                                </h3>
+                                <p class="text-sm text-gray-600 mb-2">Code: {{ produit.code }}</p>
+                                <div class="flex items-center text-xs text-gray-500">
+                                    <i class="fas fa-tag mr-1"></i>
+                                    {{ produit.categorie.nom if produit.categorie else 'Non catégorisé' }}
+                                </div>
+                            </div>
+
+                            <!-- Stock Info -->
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-600">Stock actuel</span>
+                                    <span
+                                        class="text-2xl font-bold {{ 'text-red-600' if produit.stock_actuel <= produit.seuil_min else 'text-green-600' if produit.stock_actuel > produit.seuil_min * 2 else 'text-orange-600' }}">
+                                        {{ produit.stock_actuel }}
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    {% set stock_percentage = (produit.stock_actuel / (produit.seuil_min * 3) * 100) if
+                                    produit.seuil_min > 0 else 50 %}
+                                    <div class="h-2 rounded-full {{ 'bg-red-500' if stock_percentage < 33 else 'bg-orange-500' if stock_percentage < 66 else 'bg-green-500' }}"
+                                        style="width: {{ [stock_percentage, 100]|min }}%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Seuil: {{ produit.seuil_min }}</span>
+                                    <span>{{ produit.unite or 'unité' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="mb-4">
+                                <span class="text-lg font-semibold text-gray-900">{{
+                                    "{:,.0f}".format(produit.prix_unitaire) }} CFA</span>
+                                <span class="text-sm text-gray-600">/ {{ produit.unite or 'unité' }}</span>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex space-x-2">
+                                <a href="/produit/{{ produit.id_produit }}/modifier"
+                                    class="flex-1 bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200 text-sm font-medium text-center">
+                                    <i class="fas fa-edit mr-1"></i>
+                                    Modifier
+                                </a>
+                                <form action="/produit/{{ produit.id_produit }}/supprimer"
+                                    method="post"
+                                    onsubmit="return confirm('Voulez-vous vraiment supprimer ce produit ?')"
+                                    class="flex-1">
+                                    <button type="submit"
+                                        class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium text-center">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        Supprimer
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-search text-gray-400 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">Aucun produit trouvé</h3>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Vue en table -->
+                <div x-show="view === 'table'" class="glass-effect rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Produit</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Catégorie</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Stock</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Prix</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Statut</th>
+                                    <th
+                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for produit in produits.items %}
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4">{{ produit.nom }}</td>
+                                    <td class="px-6 py-4">{{ produit.categorie.nom if produit.categorie else 'Non
+                                        catégorisé' }}</td>
+                                    <td class="px-6 py-4">{{ produit.stock_actuel }}</td>
+                                    <td class="px-6 py-4">{{ "{:,.0f}".format(produit.prix_unitaire) }} CFA</td>
+                                    <td class="px-6 py-4">
+                                        {% if produit.stock_actuel <= produit.seuil_min %} <span class="text-red-600">
+                                            Critique</span>
+                                            {% elif produit.stock_actuel <= produit.seuil_min * 1.5 %} <span
+                                                class="text-orange-600">Bas</span>
+                                                {% else %}
+                                                <span class="text-green-600">Normal</span>
+                                                {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button class="text-primary-600 hover:text-primary-900 p-1">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Pagination -->
+            {% if produits.pages > 1 %}
+            <div class="flex items-center justify-between mt-8">
+                <div class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ produits.per_page * (produits.page - 1) + 1 }}</span>
+                    à <span class="font-medium">{{ produits.per_page * produits.page if produits.page < produits.pages
+                            else produits.total }}</span>
+                            sur <span class="font-medium">{{ produits.total }}</span> résultats
+                </div>
+                <div class="flex space-x-2">
+                    {% if produits.has_prev %}
+                    <a href="{{ url_for('produits', page=produits.prev_num, search=search) }}"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700">
+                        <i class="fas fa-chevron-left mr-1"></i>
+                        Précédent
+                    </a>
+                    {% endif %}
+
+                    {% for page_num in produits.iter_pages() %}
+                    {% if page_num %}
+                    {% if page_num != produits.page %}
+                    <a href="{{ url_for('produits', page=page_num, search=search) }}"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700">
+                        {{ page_num }}
+                    </a>
+                    {% else %}
+                    <span class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">
+                        {{ page_num }}
+                    </span>
+                    {% endif %}
+                    {% else %}
+                    <span class="px-2 py-2 text-gray-500">...</span>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if produits.has_next %}
+                    <a href="{{ url_for('produits', page=produits.next_num, search=search) }}"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700">
+                        Suivant
+                        <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

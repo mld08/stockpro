@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gestion Comptabilité Matière{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <!-- Header Section -->
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-tachometer-alt mr-3 text-primary-600"></i>
+                    Tableau de Bord
+                </h1>
+                <p class="text-gray-600">Vue d'ensemble de votre inventaire et activités récentes</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Produits -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Total Produits</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ total_produits }}</p>
+                            <p class="text-xs text-red-600 mt-1">
+                                <i class="fas fa-exclamation-triangle"></i> Attention requise
+                            </p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertes Nouvelles -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Alertes Nouvelles</p>
+                            <p class="text-3xl font-bold text-orange-600">{{ alertes_nouvelles }}</p>
+                            <p class="text-xs text-orange-600 mt-1">
+                                <i class="fas fa-bell"></i> À traiter
+                            </p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-bell text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertes Traitées -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Alertes Traitées</p>
+                            <p class="text-3xl font-bold text-green-600">{{ alertes_trait }}</p>
+                            <p class="text-xs text-green-600 mt-1">
+                                <i class="fas fa-check-circle"></i> Résolues
+                            </p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-bell text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Valeur Stock -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Valeur Stock</p>
+                            <p class="text-2xl font-bold text-green-600">{{ '{:,.0f}'.format(stock_total).replace(',', '
+                                ') }} CFA</p>
+                            <p class="text-xs text-green-600 mt-1">
+                                <i class="fas fa-chart-line"></i> {% if pourcentage_stock is not none %}
+                                {{ '+' if pourcentage_stock > 0 else '' }}{{ pourcentage_stock }}% ce mois
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div
+                            class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-money-bill-wave text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts and Tables Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Stock par Catégorie -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-chart-pie mr-2 text-primary-600"></i>
+                            Stock par Catégorie
+                        </h3>
+                        <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                            Voir tout <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                    <div class="relative h-64">
+                        <canvas id="categoriesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Évolution des Stocks -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-chart-line mr-2 text-primary-600"></i>
+                            Évolution des Mouvements
+                        </h3>
+                        <select
+                            class="text-sm border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option>7 derniers jours</option>
+                            <option>30 derniers jours</option>
+                            <option>3 derniers mois</option>
+                        </select>
+                    </div>
+                    <div class="relative h-64">
+                        <canvas id="mouvementsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Produits en Alerte -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-exclamation-circle mr-2 text-red-500"></i>
+                            Produits en Stock Critique
+                        </h3>
+                        <a href="{{ url_for('alertes') }}" class="text-red-600 hover:text-red-700 text-sm font-medium">
+                            Voir toutes <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    <div class="space-y-4">
+                        {% for produit in produits_alertes %}
+                        <div
+                            class="flex items-center justify-between p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-box text-red-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ produit.nom }}</p>
+                                    <p class="text-sm text-gray-600">Code: {{ produit.code }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold text-red-600">{{ produit.stock_actuel }}</p>
+                                <p class="text-xs text-gray-500">Seuil: {{ produit.seuil_min }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
+                            <p class="text-gray-500">Aucun produit en alerte</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Mouvements Récents -->
+                <div class="glass-effect rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-history mr-2 text-primary-600"></i>
+                            Mouvements Récents
+                        </h3>
+                        <a href="{{ url_for('mouvements') }}"
+                            class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                            Voir tous <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    <div class="space-y-4">
+                        {% for mouvement, produit in mouvements_recents %}
+                        <div
+                            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div class="flex items-center space-x-3">
+                                <div
+                                    class="w-10 h-10 {{ 'bg-green-100' if mouvement.type_mouvement == 'ENTREE' else 'bg-red-100' }} rounded-lg flex items-center justify-center">
+                                    <i
+                                        class="fas {{ 'fa-arrow-up text-green-600' if mouvement.type_mouvement == 'ENTREE' else 'fa-arrow-down text-red-600' }}"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ produit.nom }}</p>
+                                    <p class="text-sm text-gray-600">{{ mouvement.motif or 'Mouvement de stock' }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p
+                                    class="text-lg font-bold {{ 'text-green-600' if mouvement.type_mouvement == 'ENTREE' else 'text-red-600' }}">
+                                    {{ '+' if mouvement.type_mouvement == 'ENTREE' else '-' }}{{ mouvement.quantite }}
+                                </p>
+                                <p class="text-xs text-gray-500">{{ mouvement.date_mouvement.strftime('%d/%m à %H:%M')
+                                    }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-inbox text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-gray-500">Aucun mouvement récent</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Rapides -->
+            <div class="mt-8 glass-effect rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">
+                    <i class="fas fa-rocket mr-2 text-primary-600"></i>
+                    Actions Rapides
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <a href="{{ url_for('nouveau_produit') }}"
+                        class="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover-lift">
+                        <i class="fas fa-plus-circle text-xl"></i>
+                        <div>
+                            <p class="font-medium">Nouveau Produit</p>
+                            <p class="text-xs opacity-90">Ajouter un article</p>
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('nouveau_mouvement') }}"
+                        class="flex items-center space-x-3 p-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 hover-lift">
+                        <i class="fas fa-exchange-alt text-xl"></i>
+                        <div>
+                            <p class="font-medium">Mouvement</p>
+                            <p class="text-xs opacity-90">Entrée/Sortie</p>
+                        </div>
+                    </a>
+
+                    <!-- <a href="#"
+                        class="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 hover-lift">
+                        <i class="fas fa-file-export text-xl"></i>
+                        <div>
+                            <p class="font-medium">Export</p>
+                            <p class="text-xs opacity-90">Rapport Excel</p>
+                        </div>
+                    </a> -->
+
+                    <!-- <a href="#"
+                        class="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 hover-lift">
+                        <i class="fas fa-inventory text-xl"></i>
+                        <div>
+                            <p class="font-medium">Inventaire</p>
+                            <p class="text-xs opacity-90">Mise à jour</p>
+                        </div>
+                    </a> -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts pour les graphiques -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fonction pour rafraîchir les données toutes les 5 minutes
+        function scheduleRefresh() {
+            setInterval(async () => {
+                try {
+                    const statsData = await loadStats();
+                    updateDashboardStats(statsData);
+                    // Note: Pour rafraîchir les graphiques, il faudrait les détruire et les recréer
+                    // ou utiliser chart.data.datasets[0].data = newData; chart.update();
+                } catch (error) {
+                    console.error('Erreur lors du rafraîchissement:', error);
+                }
+            }, 300000); // 5 minutes
+        }
+
+        // Initialiser le dashboard
+        initDashboard();
+
+        // Programmer le rafraîchissement automatique
+        scheduleRefresh();
+    });
+    // Configuration des couleurs
+    const colors = {
+        primary: '#3B82F6',
+        success: '#10B981',
+        warning: '#F59E0B',
+        danger: '#EF4444',
+        purple: '#8B5CF6',
+        orange: '#F97316',
+        teal: '#14B8A6',
+        indigo: '#6366F1'
+    };
+
+    // Palette de couleurs pour les graphiques
+    const colorPalette = [
+        colors.primary,
+        colors.success,
+        colors.warning,
+        colors.purple,
+        colors.danger,
+        colors.orange,
+        colors.teal,
+        colors.indigo
+    ];
+
+    // Fonction pour charger les données depuis l'API
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+            console.log('Données statistiques chargées:', data);
+            return data;
+        } catch (error) {
+            console.error('Erreur lors du chargement des statistiques:', error);
+            // Données par défaut en cas d'erreur
+            return {
+                categories: [
+                    { name: 'Aucune catégorie', value: 0 }
+                ],
+                total_produits: 0,
+                stock_total: 0,
+                mouvements: []
+            };
+        }
+    }
+
+    // Fonction pour initialiser le graphique des catégories
+    function initCategoriesChart(statsData) {
+        const categoriesCtx = document.getElementById('categoriesChart');
+        if (!categoriesCtx) {
+            console.warn('Element categoriesChart non trouvé');
+            return;
+        }
+
+        // Préparer les données pour le graphique
+        const labels = statsData.categories.map(cat => cat.name);
+        const data = statsData.categories.map(cat => cat.value);
+        const backgroundColors = colorPalette.slice(0, labels.length);
+
+        new Chart(categoriesCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 10,
+                    hoverBorderWidth: 2,
+                    hoverBorderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12,
+                                family: 'Inter'
+                            },
+                            generateLabels: function (chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+
+                                        return {
+                                            text: `${label} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].backgroundColor[i],
+                                            pointStyle: 'circle',
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return `${label}: ${value} produits (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    duration: 1000
+                }
+            }
+        });
+    }
+
+    // Fonction pour initialiser le graphique des mouvements (avec données simulées)
+    function initMouvementsChart(statsData) {
+        const mouvementsCtx = document.getElementById('mouvementsChart');
+        if (!mouvementsCtx) {
+            console.warn('Element mouvementsChart non trouvé');
+            return;
+        }
+
+        // Extraction des données réelles depuis l'API
+        const labels = statsData.mouvements.map(m => {
+            const dateObj = new Date(m.date);
+            return dateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
+        });
+
+        const entreesData = statsData.mouvements.map(m => m.entrees);
+        const sortiesData = statsData.mouvements.map(m => m.sorties);
+
+        new Chart(mouvementsCtx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Entrées',
+                    data: entreesData,
+                    borderColor: colors.success,
+                    backgroundColor: colors.success + '20',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: colors.success,
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }, {
+                    label: 'Sorties',
+                    data: sortiesData,
+                    borderColor: colors.danger,
+                    backgroundColor: colors.danger + '20',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: colors.danger,
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            font: {
+                                size: 12,
+                                family: 'Inter'
+                            },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        cornerRadius: 8,
+                        callbacks: {
+                            title: function (context) {
+                                return `${context[0].label}`;
+                            },
+                            label: function (context) {
+                                return `${context.dataset.label}: ${context.parsed.y} mouvements`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Inter'
+                            },
+                            color: '#6B7280'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Inter'
+                            },
+                            color: '#6B7280'
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+
+    // Fonction pour mettre à jour les statistiques dans le dashboard
+    function updateDashboardStats(statsData) {
+        // Mettre à jour le nombre total de produits
+        const totalProduitsElement = document.getElementById('total-produits');
+        if (totalProduitsElement) {
+            totalProduitsElement.textContent = statsData.total_produits.toLocaleString();
+        }
+
+        // Mettre à jour le stock total
+        const stockTotalElement = document.getElementById('stock-total');
+        if (stockTotalElement) {
+            stockTotalElement.textContent = statsData.stock_total.toLocaleString();
+        }
+
+        // Mettre à jour le nombre de catégories
+        const totalCategoriesElement = document.getElementById('total-categories');
+        if (totalCategoriesElement) {
+            totalCategoriesElement.textContent = statsData.categories.length;
+        }
+    }
+
+    // Fonction pour gérer les erreurs d'affichage
+    function handleChartError(chartId, error) {
+        console.error(`Erreur lors de l'initialisation du graphique ${chartId}:`, error);
+        const chartContainer = document.getElementById(chartId);
+        if (chartContainer) {
+            chartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-full text-gray-500">
+                    <div class="text-center">
+                        <i class="fas fa-chart-pie text-3xl mb-2"></i>
+                        <p>Erreur de chargement du graphique</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Fonction principale d'initialisation
+    async function initDashboard() {
+        try {
+            // Charger les données depuis l'API
+            const statsData = await loadStats();
+
+            // Mettre à jour les statistiques
+            updateDashboardStats(statsData);
+
+            // Initialiser les graphiques
+            initCategoriesChart(statsData);
+            initMouvementsChart(statsData);
+
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation du dashboard:', error);
+
+            // Afficher les erreurs pour chaque graphique
+            handleChartError('categoriesChart', error);
+            handleChartError('mouvementsChart', error);
+        }
+    }
+
+</script>
+{% endblock %}

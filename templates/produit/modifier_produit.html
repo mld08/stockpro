@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier Produit - StockPro{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-edit text-primary-600 mr-3"></i>
+                    Modifier le Produit
+                </h1>
+                <p class="text-gray-600">Modifiez les informations du produit "{{ produit.nom }}"</p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{{ url_for('produits') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover-lift transition-all duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour à la liste
+                </a>
+                <div class="inline-flex items-center px-3 py-2 bg-blue-50 text-blue-800 text-xs font-medium rounded-lg border border-blue-200">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    ID: {{ produit.id_produit }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations actuelles du produit -->
+    <div class="glass-effect rounded-2xl shadow-xl overflow-hidden hover-lift mb-6">
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
+            <h3 class="text-lg font-semibold text-white flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                Informations actuelles
+            </h3>
+        </div>
+        <div class="p-4 bg-gray-50">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div class="text-center">
+                    <div class="font-medium text-gray-700">Stock Actuel</div>
+                    <div class="text-lg font-bold text-blue-600">{{ produit.stock_actuel }}</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-medium text-gray-700">Prix Unitaire</div>
+                    <div class="text-lg font-bold text-green-600">{{ "{:,.0f}".format(produit.prix_unitaire) }} FCFA</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-medium text-gray-700">Seuil d'Alerte</div>
+                    <div class="text-lg font-bold text-orange-600">{{ produit.seuil_min }}</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-medium text-gray-700">Valeur Stock</div>
+                    <div class="text-lg font-bold text-purple-600">{{ "{:,.0f}".format(produit.prix_unitaire * produit.stock_actuel) }} FCFA</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire de modification -->
+    <div class="glass-effect rounded-2xl shadow-xl overflow-hidden hover-lift">
+        <div class="gradient-bg p-6">
+            <h2 class="text-xl font-semibold text-white flex items-center">
+                <i class="fas fa-edit mr-2"></i>
+                Modifier les informations
+            </h2>
+        </div>
+
+        <form method="POST" class="p-6 space-y-6" x-data="productForm()">
+            <!-- Informations de base -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Code produit -->
+                <div class="animate-slide-in">
+                    <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-barcode mr-1 text-primary-600"></i>
+                        Code produit *
+                    </label>
+                    <input type="text" 
+                           id="code" 
+                           name="code" 
+                           required
+                           value="{{ produit.code }}"
+                           x-model="form.code"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           placeholder="Ex: PROD001">
+                    <p class="mt-1 text-sm text-gray-500">Code unique d'identification</p>
+                </div>
+
+                <!-- Nom du produit -->
+                <div class="animate-slide-in">
+                    <label for="nom" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tag mr-1 text-primary-600"></i>
+                        Nom du produit *
+                    </label>
+                    <input type="text" 
+                           id="nom" 
+                           name="nom" 
+                           required
+                           value="{{ produit.nom }}"
+                           x-model="form.nom"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           placeholder="Nom du produit">
+                </div>
+            </div>
+
+            <!-- Catégorie et Unité -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Catégorie -->
+                <div class="animate-slide-in">
+                    <label for="categorie_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-folder mr-1 text-primary-600"></i>
+                        Catégorie
+                    </label>
+                    <select id="categorie_id" 
+                            name="categorie_id"
+                            x-model="form.categorie_id"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                        <option value="">Sélectionnez une catégorie</option>
+                        {% for categorie in categories %}
+                        <option value="{{ categorie.id_categorie }}" {% if produit.categorie_id == categorie.id_categorie %}selected{% endif %}>
+                            {{ categorie.nom }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Unité -->
+                <div class="animate-slide-in">
+                    <label for="unite" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-balance-scale mr-1 text-primary-600"></i>
+                        Unité de mesure *
+                    </label>
+                    <select id="unite" 
+                            name="unite" 
+                            required
+                            x-model="form.unite"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                        <option value="">Sélectionnez une unité</option>
+                        <option value="pièce" {% if produit.unite == 'pièce' %}selected{% endif %}>Pièce</option>
+                        <option value="kg" {% if produit.unite == 'kg' %}selected{% endif %}>Kilogramme (kg)</option>
+                        <option value="g" {% if produit.unite == 'g' %}selected{% endif %}>Gramme (g)</option>
+                        <option value="litre" {% if produit.unite == 'litre' %}selected{% endif %}>Litre</option>
+                        <option value="ml" {% if produit.unite == 'ml' %}selected{% endif %}>Millilitre (ml)</option>
+                        <option value="mètre" {% if produit.unite == 'mètre' %}selected{% endif %}>Mètre</option>
+                        <option value="cm" {% if produit.unite == 'cm' %}selected{% endif %}>Centimètre (cm)</option>
+                        <option value="boîte" {% if produit.unite == 'boîte' %}selected{% endif %}>Boîte</option>
+                        <option value="carton" {% if produit.unite == 'carton' %}selected{% endif %}>Carton</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Prix et Stock -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Prix unitaire -->
+                <div class="animate-slide-in">
+                    <label for="prix_unitaire" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-euro-sign mr-1 text-primary-600"></i>
+                        Prix unitaire * (FCFA)
+                    </label>
+                    <input type="number" 
+                           id="prix_unitaire" 
+                           name="prix_unitaire" 
+                           step="0.01"
+                           min="0"
+                           required
+                           value="{{ produit.prix_unitaire }}"
+                           x-model="form.prix_unitaire"
+                           @input="calculateTotal(); calculateDifference()"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           placeholder="0.00">
+                </div>
+
+                <!-- Stock actuel -->
+                <div class="animate-slide-in">
+                    <label for="stock_actuel" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-cubes mr-1 text-primary-600"></i>
+                        Stock actuel *
+                    </label>
+                    <input type="number" 
+                           id="stock_actuel" 
+                           name="stock_actuel" 
+                           min="0"
+                           required
+                           value="{{ produit.stock_actuel }}"
+                           x-model="form.stock_actuel"
+                           @input="calculateTotal(); calculateDifference()"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           placeholder="0">
+                </div>
+
+                <!-- Seuil minimum -->
+                <div class="animate-slide-in">
+                    <label for="seuil_min" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1 text-primary-600"></i>
+                        Seuil d'alerte *
+                    </label>
+                    <input type="number" 
+                           id="seuil_min" 
+                           name="seuil_min" 
+                           min="0"
+                           required
+                           value="{{ produit.seuil_min }}"
+                           x-model="form.seuil_min"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                           placeholder="0">
+                    <p class="mt-1 text-sm text-gray-500">Stock minimum avant alerte</p>
+                </div>
+            </div>
+
+            <!-- Fournisseur -->
+            <div class="animate-slide-in">
+                <label for="id_fournisseur" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-truck mr-1 text-primary-600"></i>
+                    Fournisseur
+                </label>
+                <select id="id_fournisseur" 
+                        name="id_fournisseur"
+                        x-model="form.id_fournisseur"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                    <option value="">Sélectionnez un fournisseur</option>
+                    {% for fournisseur in fournisseurs %}
+                    <option value="{{ fournisseur.id_fournisseur }}" {% if produit.id_fournisseur == fournisseur.id_fournisseur %}selected{% endif %}>
+                        {{ fournisseur.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Aperçu des modifications -->
+            <div x-show="hasChanges" 
+                 x-transition
+                 class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 border border-yellow-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">
+                    <i class="fas fa-exchange-alt mr-2 text-yellow-600"></i>
+                    Résumé des modifications
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div x-show="stockDifference !== 0">
+                        <span class="font-medium">Variation de stock:</span>
+                        <span :class="stockDifference > 0 ? 'text-green-600' : 'text-red-600'" 
+                              x-text="(stockDifference > 0 ? '+' : '') + stockDifference"></span>
+                    </div>
+                    <div x-show="form.prix_unitaire && form.stock_actuel">
+                        <span class="font-medium">Nouvelle valeur totale:</span>
+                        <span class="font-bold text-green-700" x-text="formatCurrency(totalValue)"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <a href="{{ url_for('produits') }}" 
+                   class="px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover-lift transition-all duration-300">
+                    <i class="fas fa-times mr-2"></i>
+                    Annuler
+                </a>
+                <button type="submit" 
+                        class="px-6 py-3 gradient-bg text-white rounded-lg text-sm font-medium hover:opacity-90 hover-lift transition-all duration-300 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Sauvegarder les modifications
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function productForm() {
+    return {
+        form: {
+            code: '{{ produit.code }}',
+            nom: '{{ produit.nom }}',
+            categorie_id: '{{ produit.categorie_id or "" }}',
+            unite: '{{ produit.unite }}',
+            prix_unitaire: {{ produit.prix_unitaire }},
+            stock_actuel: {{ produit.stock_actuel }},
+            seuil_min: {{ produit.seuil_min }},
+            id_fournisseur: '{{ produit.id_fournisseur or "" }}'
+        },
+        originalValues: {
+            code: '{{ produit.code }}',
+            nom: '{{ produit.nom }}',
+            categorie_id: '{{ produit.categorie_id or "" }}',
+            unite: '{{ produit.unite }}',
+            prix_unitaire: {{ produit.prix_unitaire }},
+            stock_actuel: {{ produit.stock_actuel }},
+            seuil_min: {{ produit.seuil_min }},
+            id_fournisseur: '{{ produit.id_fournisseur or "" }}'
+        },
+        totalValue: 0,
+        stockDifference: 0,
+        
+        get hasChanges() {
+            return JSON.stringify(this.form) !== JSON.stringify(this.originalValues);
+        },
+        
+        calculateTotal() {
+            this.totalValue = (parseFloat(this.form.prix_unitaire) || 0) * (parseInt(this.form.stock_actuel) || 0);
+        },
+        
+        calculateDifference() {
+            this.stockDifference = (parseInt(this.form.stock_actuel) || 0) - (parseInt(this.originalValues.stock_actuel) || 0);
+        },
+        
+        formatCurrency(value) {
+            return new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value) + ' FCFA';
+        },
+        
+        init() {
+            this.calculateTotal();
+        }
+    }
+}
+
+// Animation au scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const elements = document.querySelectorAll('.animate-slide-in');
+    elements.forEach((el, index) => {
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(-20px)';
+            el.style.transition = 'all 0.6s ease-out';
+            
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateX(0)';
+            }, 100);
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

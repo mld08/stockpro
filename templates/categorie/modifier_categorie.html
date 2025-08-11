@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier Catégorie - StockPro{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-edit mr-3 text-primary-600"></i>
+                    Modifier Catégorie
+                </h1>
+                <p class="text-gray-600">Mettez à jour les informations de la catégorie.</p>
+            </div>
+
+            <!-- Formulaire de modification de catégorie -->
+            <form method="post" action="{{ url_for('modifier_categorie', id_categorie=categorie.id_categorie) }}" class="bg-white shadow-md rounded-lg p-8">
+                
+                <div class="mb-6">
+                    <label for="nom">Nom</label>
+                    <input type="text" name="nom" id="nom" value="{{ categorie.nom }}" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                        placeholder="Nom de la catégorie">
+                </div>
+                <div class="mb-6">
+                    <label for="description">Description</label>
+                    <textarea name="description" id="description" rows="4"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300"
+                        placeholder="Description de la catégorie">{{ categorie.description }}</textarea>
+                </div>
+                <button type="submit"
+                        class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white rounded-xl hover:from-primary-700 hover:to-purple-700 font-medium transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Enregistrer les modifications
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

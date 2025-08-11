@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - Gestion Comptabilité Matière{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Page Header -->
+            <div
+                class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mx-5">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        <i class="fas fa-boxes mr-3 text-primary-600"></i>
+                        Gestion des Catégories de Produits
+                    </h1>
+                    <p class="text-gray-600">Gérez vos produits et catégories de manière efficace.</p>
+                </div>
+                <a href="{{ url_for('nouvelle_categorie') }}"
+                    class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white rounded-xl hover:from-primary-700 hover:to-purple-700 font-medium transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>
+                    Nouvelle catégorie
+                </a>
+            </div>
+
+            <!-- Categories list -->
+            <!-- Vue en table -->
+            <div class="glass-effect rounded-2xl overflow-hidden p-6 m-8 shadow-lg">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Catégorie</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Description</th>
+                                <th
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for categorie in categories.items %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-6 py-4">{{ categorie.nom }}</td>
+                                <td class="px-6 py-4">{{ categorie.description or 'Aucune description' }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="/categorie/{{ categorie.id_categorie }}/modifier"
+                                        class="text-primary-600 hover:text-primary-900 p-1">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="/categorie/{{ categorie.id_categorie }}/supprimer" method="post"
+                                        onsubmit="return confirm('Voulez-vous vraiment supprimer cette catégorie ?')"
+                                        class="inline-block">
+                                        <button type="submit" class="text-red-600 hover:text-red-900 p-1">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Pagination -->
+            {% if categories.pages > 1 %}
+            <div class="flex items-center justify-between mt-8">
+                <div class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ categories.per_page * (categories.page - 1) + 1 }}</span>
+                    à <span class="font-medium">{{ categories.per_page * categories.page if categories.page < categories.pages
+                            else categories.total }}</span>
+                            sur <span class="font-medium">{{ categories.total }}</span> résultats
+                </div>
+                <div class="flex space-x-2">
+                    {% if categories.has_prev %}
+                    <a href="{{ url_for('categories', page=categories.prev_num, search=search) }}"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700">
+                        <i class="fas fa-chevron-left mr-1"></i>
+                        Précédent
+                    </a>
+                    {% endif %}
+
+                    {% for page_num in categories.iter_pages() %}
+                    {% if page_num %}
+                    {% if page_num != categories.page %}
+                    <a href="{{ url_for('categories', page=page_num, search=search) }}"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700">
+                        {{ page_num }}
+                    </a>
+                    {% else %}
+                    <span class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">
+                        {{ page_num }}
+                    </span>
+                    {% endif %}
+                    {% else %}
+                    <span class="px-2 py-2 text-gray-500">...</span>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if categories.has_next %}
+                    <a href="{{ url_for('categories', page=categories.next_num, search=search) }}"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700">
+                        Suivant
+                        <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

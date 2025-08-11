@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-gray-50">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestion Comptabilité Matière{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Animations pour les messages flash */
+        .flash-enter {
+            animation: flashEnter 0.5s ease-out;
+        }
+
+        .flash-exit {
+            animation: flashExit 0.3s ease-in;
+        }
+
+        @keyframes flashEnter {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes flashExit {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+        }
+    </style>
+</head>
+
+<body class="h-full">
+    <div class="min-h-full">
+        {% if current_user.is_authenticated %}
+        <!-- Navigation -->
+        <nav class="glass-effect fixed w-full z-50 top-0" x-data="{ open: false }">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-2xl font-bold gradient-bg bg-clip-text text-transparent">
+                                <i class="fas fa-warehouse mr-2"></i>StockPro
+                            </h1>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="{{ url_for('dashboard') }}"
+                                    class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-white hover:bg-opacity-20 {{ 'bg-white bg-opacity-20 text-primary-700' if request.endpoint == 'dashboard' else 'text-gray-700 hover:text-primary-700' }}">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                </a>
+                                <a href="{{ url_for('fournisseurs') }}"
+                                    class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-white hover:bg-opacity-20 {{ 'bg-white bg-opacity-20 text-primary-700' if request.endpoint == 'fournisseurs' else 'text-gray-700 hover:text-primary-700' }}">
+                                    <i class="fas fa-truck mr-2"></i>Fournisseurs
+                                </a>
+                                <a href="{{ url_for('categories') }}"
+                                    class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-white hover:bg-opacity-20 {{ 'bg-white bg-opacity-20 text-primary-700' if request.endpoint == 'categories' else 'text-gray-700 hover:text-primary-700' }}">
+                                    <i class="fas fa-tags mr-2"></i>Catégories
+                                </a>
+                                <a href="{{ url_for('produits') }}"
+                                    class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-white hover:bg-opacity-20 {{ 'bg-white bg-opacity-20 text-primary-700' if request.endpoint == 'produits' else 'text-gray-700 hover:text-primary-700' }}">
+                                    <i class="fas fa-boxes mr-2"></i>Produits
+                                </a>
+                                <a href="{{ url_for('mouvements') }}"
+                                    class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-white hover:bg-opacity-20 {{ 'bg-white bg-opacity-20 text-primary-700' if request.endpoint == 'mouvements' else 'text-gray-700 hover:text-primary-700' }}">
+                                    <i class="fas fa-exchange-alt mr-2"></i>Mouvements
+                                </a>
+                                <a href="{{ url_for('alertes') }}"
+                                    class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:bg-white hover:bg-opacity-20 {{ 'bg-white bg-opacity-20 text-primary-700' if request.endpoint == 'alertes' else 'text-gray-700 hover:text-primary-700' }} relative">
+                                    <i class="fas fa-bell mr-2"></i>Alertes
+                                    {% if alertes_nouvelles > 0 %}
+                                    <span
+                                        class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-1.5 py-0.5 min-w-[20px] text-center">{{ alertes_nouvelles }}</span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hidden md:block">
+                        <div class="ml-4 flex items-center md:ml-6" x-data="{ open: false }">
+                            <div class="relative">
+                                <button @click="open = !open"
+                                    class="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-white hover:bg-opacity-20 transition-all duration-300">
+                                    <div
+                                        class="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold">
+                                        {{ current_user.nom[0] }}
+                                    </div>
+                                    <span>{{ current_user.nom }}</span>
+                                    <i class="fas fa-chevron-down ml-1" :class="{ 'rotate-180': open }"
+                                        style="transition: transform 0.2s;"></i>
+                                </button>
+
+                                <div x-show="open" @click.away="open = false"
+                                    x-transition:enter="transition ease-out duration-100"
+                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                    x-transition:leave-end="transform opacity-0 scale-95"
+                                    class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user mr-2"></i>Mon Profil
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-cog mr-2"></i>Paramètres
+                                    </a>
+                                    <hr class="my-1">
+                                    <a href="{{ url_for('logout') }}"
+                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden">
+                        <button @click="open = !open"
+                            class="p-2 rounded-md text-gray-700 hover:bg-white hover:bg-opacity-20">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu -->
+            <div x-show="open" class="md:hidden bg-white bg-opacity-95 backdrop-blur-sm">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="{{ url_for('dashboard') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a>
+                    <a href="{{ url_for('fournisseurs') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50"><i class="fas fa-truck mr-2"></i>Fournisseurs</a>
+                    <a href="{{ url_for('categories') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50"><i class="fas fa-tags mr-2"></i>Catégories</a>
+                    <a href="{{ url_for('produits') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50"><i class="fas fa-boxes mr-2"></i>Produits</a>
+                    <a href="{{ url_for('mouvements') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50"><i class="fas fa-exchange-alt mr-2"></i>Mouvements</a>
+                    <a href="{{ url_for('alertes') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50"><i class="fas fa-bell mr-2"></i>Alertes</a>
+                    <a href="{{ url_for('logout') }}"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primary-50">Déconnexion</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Messages Flash -->
+        <div class="fixed top-20 right-1/4 z-40 space-y-3" x-data="flashMessages()" id="flash-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash-enter fixed top-20 transform -translate-x-1/2 w-[95%] max-w-4xl glass-effect rounded-xl shadow-lg overflow-hidden border-l-4 
+                                {{ 'border-green-500' if category == 'success' else 
+                                   'border-red-500' if category == 'error' else 
+                                   'border-orange-500' if category == 'warning' else 
+                                   'border-blue-500' }}"
+                         x-data="{ show: true }"
+                         x-show="show"
+                         x-init="setTimeout(() => show = false, 5000)">
+                        <div class="p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="w-6 h-6 rounded-full flex items-center justify-center
+                                                {{ 'bg-green-100 text-green-600' if category == 'success' else 
+                                                   'bg-red-100 text-red-600' if category == 'error' else 
+                                                   'bg-orange-100 text-orange-600' if category == 'warning' else 
+                                                   'bg-blue-100 text-blue-600' }}">
+                                        <i class="fas text-sm
+                                                  {{ 'fa-check' if category == 'success' else 
+                                                     'fa-times' if category == 'error' else 
+                                                     'fa-exclamation-triangle' if category == 'warning' else 
+                                                     'fa-info' }}"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-3 w-0 flex-1">
+                                    <div class="text-sm font-medium
+                                                {{ 'text-green-800' if category == 'success' else 
+                                                   'text-red-800' if category == 'error' else 
+                                                   'text-orange-800' if category == 'warning' else 
+                                                   'text-blue-800' }}">
+                                        {% if category == 'success' %}
+                                            Succès
+                                        {% elif category == 'error' %}
+                                            Erreur
+                                        {% elif category == 'warning' %}
+                                            Attention
+                                        {% else %}
+                                            Information
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-1 text-sm text-gray-700">
+                                        {{ message }}
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex-shrink-0 flex">
+                                    <button @click="show = false"
+                                            class="rounded-md inline-flex text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200">
+                                        <i class="fas fa-times text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Page Content -->
+        <div class="pt-16">
+            <!-- Main Content -->
+            <main class="animate-fade-in">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Gestionnaire pour les messages flash
+        function flashMessages() {
+            return {
+                init() {
+                    // Auto-hide flash messages after 5 seconds
+                    this.$el.querySelectorAll('[x-data*="show"]').forEach(el => {
+                        setTimeout(() => {
+                            if (el.__x) {
+                                el.__x.$data.show = false;
+                            }
+                        }, 5000);
+                    });
+                }
+            }
+        }
+
+        // Animation des cartes au scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-slide-in');
+                }
+            });
+        }, observerOptions);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.hover-lift').forEach(el => {
+                observer.observe(el);
+            });
+        });
+
+        // Fonction pour ajouter des messages flash dynamiquement
+        window.addFlashMessage = function(message, category = 'info') {
+            const container = document.getElementById('flash-container');
+            const colors = {
+                success: { border: 'border-green-500', bg: 'bg-green-100', text: 'text-green-600', title: 'text-green-800', icon: 'fa-check', titleText: 'Succès' },
+                error: { border: 'border-red-500', bg: 'bg-red-100', text: 'text-red-600', title: 'text-red-800', icon: 'fa-times', titleText: 'Erreur' },
+                warning: { border: 'border-orange-500', bg: 'bg-orange-100', text: 'text-orange-600', title: 'text-orange-800', icon: 'fa-exclamation-triangle', titleText: 'Attention' },
+                info: { border: 'border-blue-500', bg: 'bg-blue-100', text: 'text-blue-600', title: 'text-blue-800', icon: 'fa-info', titleText: 'Information' }
+            };
+            
+            const color = colors[category] || colors.info;
+            
+            const flashElement = document.createElement('div');
+            flashElement.className = `flash-enter max-w-sm w-full glass-effect rounded-xl shadow-lg overflow-hidden border-l-4 ${color.border}`;
+            flashElement.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center ${color.bg} ${color.text}">
+                                <i class="fas text-sm ${color.icon}"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 w-0 flex-1">
+                            <div class="text-sm font-medium ${color.title}">
+                                ${color.titleText}
+                            </div>
+                            <div class="mt-1 text-sm text-gray-700">
+                                ${message}
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-shrink-0 flex">
+                            <button onclick="this.closest('.flash-enter').remove()"
+                                    class="rounded-md inline-flex text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200">
+                                <i class="fas fa-times text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(flashElement);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (flashElement.parentNode) {
+                    flashElement.classList.add('flash-exit');
+                    setTimeout(() => flashElement.remove(), 300);
+                }
+            }, 7000);
+        };
+    </script>
+</body>
+
+</html>
